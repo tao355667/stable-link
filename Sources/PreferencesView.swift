@@ -66,7 +66,7 @@ struct PreferencesView: View {
             Text("偏好设置")
                 .font(.system(size: 16, weight: .semibold))
             Spacer()
-            Text("AI 网络助手")
+            Text("稳连")
                 .font(.system(size: 11))
                 .foregroundStyle(AssistantTheme.secondary)
         }

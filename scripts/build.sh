@@ -3,8 +3,9 @@ set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
 BUILD_DIR="$PROJECT_DIR/build"
-APP_NAME="AI网络助手.app"
+APP_NAME="稳连.app"
 APP_PATH="$BUILD_DIR/$APP_NAME"
+LEGACY_APP_PATH="$BUILD_DIR/AI网络助手.app"
 mkdir -p "$BUILD_DIR"
 STAGING_DIR="$(mktemp -d "$BUILD_DIR/.build.XXXXXX")"
 trap 'rm -rf "$STAGING_DIR"' EXIT
@@ -24,7 +25,7 @@ if [ ! -f "${SOURCES[0]}" ]; then
     exit 1
 fi
 
-echo "正在构建 AI 网络助手…"
+echo "正在构建稳连…"
 "$SWIFTC" -swift-version 5 -parse-as-library -O \
     -sdk "$SDK_PATH" -target arm64-apple-macos14.0 \
     -module-name VPNGPT \
@@ -60,9 +61,25 @@ func fail(_ message: String) -> Never {
     fputs("\(message)\n", stderr)
     exit(1)
 }
+func itemExists(_ path: String) -> Bool {
+    var attributes = stat()
+    return lstat(path, &attributes) == 0
+}
 func validateBundle(_ path: String) {
-    guard let attributes = try? manager.attributesOfItem(atPath: path),
-          attributes[.type] as? FileAttributeType != .typeSymbolicLink,
+    let expectedTypes: [(String, FileAttributeType)] = [
+        ("", .typeDirectory), ("Contents", .typeDirectory),
+        ("Contents/MacOS", .typeDirectory),
+        ("Contents/Info.plist", .typeRegular),
+        ("Contents/MacOS/VPNGPT", .typeRegular)
+    ]
+    for (relative, expectedType) in expectedTypes {
+        let item = relative.isEmpty ? path : URL(fileURLWithPath: path).appendingPathComponent(relative).path
+        guard let attributes = try? manager.attributesOfItem(atPath: item),
+              attributes[.type] as? FileAttributeType == expectedType else {
+            fail("拒绝替换未识别的应用或符号链接：\(path)")
+        }
+    }
+    guard manager.isExecutableFile(atPath: URL(fileURLWithPath: path).appendingPathComponent("Contents/MacOS/VPNGPT").path),
           let data = try? Data(contentsOf: URL(fileURLWithPath: path).appendingPathComponent("Contents/Info.plist")),
           let info = (try? PropertyListSerialization.propertyList(from: data, format: nil)) as? [String: Any],
           info["CFBundleIdentifier"] as? String == "com.xct.vpn-gpt",
@@ -74,22 +91,11 @@ func processExists(_ pid: pid_t) -> Bool {
     if Darwin.kill(pid, 0) == 0 { return true }
     return errno != ESRCH
 }
-guard CommandLine.arguments.count == 4 else { fail("bundle-tool: expected mode source destination") }
-let mode = CommandLine.arguments[1]
-let source = CommandLine.arguments[2]
-let destination = CommandLine.arguments[3]
-if mode == "replace" {
-    validateBundle(source)
-    let status: Int32
-    if manager.fileExists(atPath: destination) {
-        validateBundle(destination)
-        status = renamex_np(source, destination, UInt32(RENAME_SWAP))
-    } else {
-        status = rename(source, destination)
-    }
-    if status != 0 { fail("应用替换失败：\(String(cString: strerror(errno)))") }
-} else if mode == "stop" {
-    let paths = Set([source, destination].map {
+func stopBundles(_ bundlePaths: [String]) {
+    // Validate every existing path before terminating any process. lstat also
+    // finds dangling symlinks so they cannot bypass bundle validation.
+    for path in bundlePaths where itemExists(path) { validateBundle(path) }
+    let paths = Set(bundlePaths.map {
         URL(fileURLWithPath: $0).appendingPathComponent("Contents/MacOS/VPNGPT").standardizedFileURL.resolvingSymlinksInPath().path
     })
     let running = NSRunningApplication.runningApplications(withBundleIdentifier: "com.xct.vpn-gpt").filter {
@@ -104,7 +110,43 @@ if mode == "replace" {
         if processExists(pid) { _ = app.forceTerminate() }
         let forceDeadline = Date().addingTimeInterval(2)
         while processExists(pid) && Date() < forceDeadline { Thread.sleep(forTimeInterval: 0.1) }
-        if processExists(pid) { fail("无法结束 AI 网络助手（PID \(pid)），保留原安装。") }
+        if processExists(pid) { fail("无法结束稳连（PID \(pid)），保留原安装。") }
+    }
+}
+let arguments = Array(CommandLine.arguments.dropFirst())
+guard let mode = arguments.first else { fail("bundle-tool: expected mode and bundle paths") }
+if mode == "stop" {
+    guard arguments.count >= 2 else { fail("bundle-tool: expected bundle paths") }
+    stopBundles(Array(arguments.dropFirst()))
+} else if mode == "replace" || mode == "retire" {
+    guard arguments.count == 3 else { fail("bundle-tool: expected mode source destination") }
+    let source = arguments[1]
+    let destination = arguments[2]
+    validateBundle(source)
+    guard URL(fileURLWithPath: source).standardizedFileURL.resolvingSymlinksInPath() !=
+            URL(fileURLWithPath: destination).standardizedFileURL.resolvingSymlinksInPath() else {
+        fail("拒绝对同一个应用执行替换或归档。")
+    }
+    if mode == "replace" {
+        let status: Int32
+        if itemExists(destination) {
+            validateBundle(destination)
+            status = renamex_np(source, destination, UInt32(RENAME_SWAP))
+        } else {
+            status = rename(source, destination)
+        }
+        if status != 0 { fail("应用替换失败：\(String(cString: strerror(errno)))") }
+    } else if itemExists(destination) {
+        // Only retire the legacy bundle after the signed replacement exists.
+        validateBundle(destination)
+        stopBundles([destination])
+        do {
+            var trashedURL: NSURL?
+            try manager.trashItem(at: URL(fileURLWithPath: destination), resultingItemURL: &trashedURL)
+            print("旧版应用已移至废纸篓，可恢复：\(destination)")
+        } catch {
+            fail("新版已就绪，但旧版归档失败，保留旧版：\(error.localizedDescription)")
+        }
     }
 } else { fail("bundle-tool: unsupported mode") }
 SWIFT
@@ -112,6 +154,8 @@ SWIFT
     "$STAGING_DIR/bundle-tool.swift" \
     -framework AppKit -o "$STAGING_DIR/bundle-tool"
 
+"$STAGING_DIR/bundle-tool" stop "$STAGED_APP" "$APP_PATH" "$LEGACY_APP_PATH"
 "$STAGING_DIR/bundle-tool" replace "$STAGED_APP" "$APP_PATH"
 mv -f "$STAGING_DIR/bundle-tool" "$BUILD_DIR/.bundle-tool"
+"$BUILD_DIR/.bundle-tool" retire "$APP_PATH" "$LEGACY_APP_PATH"
 echo "构建完成：$APP_PATH"

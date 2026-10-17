@@ -1,6 +1,6 @@
-# AI 网络助手
+# 稳连-代理节点稳定性检测工具
 
-一个原生 macOS 菜单栏工具，配合 Clash Verge / mihomo 使用。打开即可查看当前节点，下方直接列出当前代理组中可切换的稳定候选；点击「切换」后自动复检，必要时可以恢复原节点。
+稳连是一个原生 macOS 菜单栏工具，配合 Clash Verge / mihomo 使用。打开即可查看当前节点，下方直接列出当前代理组中可切换的稳定候选；点击「切换」后自动复检，必要时可以恢复原节点。
 
 ## 界面截图
 
@@ -50,7 +50,7 @@
 ./scripts/run.sh
 ```
 
-脚本会构建、签名并安装到 `~/Applications/AI网络助手.app`，随后启动。应用常驻屏幕顶部菜单栏，不显示 Dock 图标；点击菜单栏图标即可打开面板。
+脚本会构建、签名并安装到 `~/Applications/稳连.app`，随后启动。应用常驻屏幕顶部菜单栏，不显示 Dock 图标；点击菜单栏图标即可打开面板。
 
 如果尚未安装 Swift 工具链，可以先执行：
 
@@ -61,7 +61,7 @@ xcode-select --install
 其他构建方式：
 
 ```bash
-./scripts/build.sh          # 只构建，产物位于 build/AI网络助手.app
+./scripts/build.sh          # 只构建，产物位于 build/稳连.app
 ./scripts/run.sh --no-open  # 构建并安装，暂不启动
 ```
 
@@ -202,7 +202,7 @@ done
 
 ## 卸载
 
-从菜单栏退出应用，删除 `~/Applications/AI网络助手.app`。如启用过开机启动，先在应用设置或系统「登录项」中关闭。
+从菜单栏退出应用，删除 `~/Applications/稳连.app`。如启用过开机启动，先在应用设置或系统「登录项」中关闭。
 
 需要清除设置和历史时，再删除 `~/Library/Application Support/VPNGPT`。
 

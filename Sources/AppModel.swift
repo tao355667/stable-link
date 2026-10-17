@@ -575,7 +575,7 @@ final class AppModel: ObservableObject {
             if enabled { try SMAppService.mainApp.register() }
             else { try SMAppService.mainApp.unregister() }
             launchAtLogin = SMAppService.mainApp.status == .enabled
-            notice = SMAppService.mainApp.status == .requiresApproval ? "请在系统设置的登录项中允许 AI 网络助手。" : "开机启动设置已更新。"
+            notice = SMAppService.mainApp.status == .requiresApproval ? "请在系统设置的登录项中允许稳连。" : "开机启动设置已更新。"
         } catch {
             launchAtLogin = SMAppService.mainApp.status == .enabled
             errorText = "无法修改开机启动：\(error.localizedDescription)"
@@ -584,7 +584,7 @@ final class AppModel: ObservableObject {
 
     func requestNotifications() {
         if notificationPermission == "已拒绝" {
-            notice = "请打开系统设置 → 通知 → AI 网络助手，开启“允许通知”。"
+            notice = "请打开系统设置 → 通知 → 稳连，开启“允许通知”。"
             return
         }
         Task {
@@ -595,7 +595,7 @@ final class AppModel: ObservableObject {
                     committedSettings = settings
                     persistSettings()
                 } else {
-                    notice = "通知未获允许。可以在系统设置 → 通知中开启 AI 网络助手。"
+                    notice = "通知未获允许。可以在系统设置 → 通知中开启稳连。"
                 }
             } catch { notice = "暂时无法申请通知权限：\(error.localizedDescription)" }
             await updateNotificationPermission()
@@ -608,7 +608,7 @@ final class AppModel: ObservableObject {
     }
 
     func copyDiagnostics() {
-        var lines = ["AI 网络助手 0.1.0", "时间：\(Date().formatted())", "状态：\(status.title)",
+        var lines = ["稳连 0.1.0", "时间：\(Date().formatted())", "状态：\(status.title)",
                      "原因：\(statusReason)", "策略组：\(settings.group)"]
         if let snapshot {
             lines.append("mihomo：\(snapshot.version)，模式：\(snapshot.mode)")
@@ -793,7 +793,7 @@ final class AppModel: ObservableObject {
         else { problemKey = key; problemCount = 1; notifiedLevel = 0 }
         let level = status == .unreachable ? 2 : 1
         if (level == 2 || problemCount >= 2) && level > notifiedLevel {
-            notify(status.title, "\(report.group)：\(report.selection)。打开 AI 网络助手查看结果和候选。")
+            notify(status.title, "\(report.group)：\(report.selection)。打开稳连查看结果和候选。")
             notifiedLevel = level
         }
         if problemCount == 1 {
@@ -808,7 +808,7 @@ final class AppModel: ObservableObject {
     private func notify(_ title: String, _ body: String) {
         guard settings.notificationsEnabled, notificationPermission == "已允许" else { return }
         let content = UNMutableNotificationContent()
-        content.title = "AI 网络助手：" + title
+        content.title = "稳连：" + title
         content.body = body
         content.sound = .default
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "vpn-gpt-health", content: content, trigger: nil))

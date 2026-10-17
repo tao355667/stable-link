@@ -131,7 +131,9 @@ struct PanelView: View {
         HStack(spacing: 7) {
             Image(systemName: "point.3.connected.trianglepath.dotted")
                 .font(.system(size: 16, weight: .semibold)).accessibilityHidden(true)
-            Text("AI 网络助手").font(.system(size: 14, weight: .semibold))
+            Text("稳连-代理节点稳定性检测工具")
+                .font(.system(size: 14, weight: .semibold))
+                .lineLimit(1)
             Spacer()
             iconButton("arrow.up.right.square", label: "打开 Clash Verge") { model.openClash() }
             iconButton("gearshape", label: "打开设置", action: openSettings)

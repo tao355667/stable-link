@@ -102,8 +102,8 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSPopoverDeleg
             button.image = indicatorImages[state]
             displayedIndicator = state
         }
-        let toolTip = "AI 网络助手 · " + model.statusReason
-        let accessibilityLabel = "AI 网络助手，" + model.status.title
+        let toolTip = "稳连 · " + model.statusReason
+        let accessibilityLabel = "稳连，" + model.status.title
         if displayedToolTip != toolTip {
             button.toolTip = toolTip
             displayedToolTip = toolTip
@@ -140,7 +140,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSPopoverDeleg
         if settingsWindow == nil {
             let controller = NSHostingController(rootView: PreferencesView(model: model))
             let window = NSWindow(contentViewController: controller)
-            window.title = "AI 网络助手设置"
+            window.title = "稳连设置"
             window.styleMask = [.titled, .closable, .miniaturizable]
             window.isReleasedWhenClosed = false
             window.setContentSize(NSSize(width: 550, height: 680))

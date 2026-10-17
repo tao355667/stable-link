@@ -35,7 +35,7 @@ enum MenuBarIndicator {
         }
         // Menu bar template rendering would discard the semantic colors.
         image.isTemplate = false
-        image.accessibilityDescription = "AI 网络助手，" + status.title
+        image.accessibilityDescription = "稳连，" + status.title
         return image
     }
 }
