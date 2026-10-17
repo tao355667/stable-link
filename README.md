@@ -1,6 +1,6 @@
 # 稳连-代理节点稳定性检测工具
 
-稳连是一个原生 macOS 菜单栏工具，配合 Clash Verge / mihomo 使用。打开即可查看当前节点，下方直接列出当前代理组中可切换的稳定候选；点击「切换」后自动复检，必要时可以恢复原节点。
+稳连（[StableLink](https://github.com/tao355667/stable-link)）是一个原生 macOS 菜单栏工具，配合 Clash Verge / mihomo 使用。打开即可查看当前节点，下方直接列出当前代理组中可切换的稳定候选；点击「切换」后自动复检，必要时可以恢复原节点。
 
 ## 界面截图
 
@@ -43,6 +43,13 @@
 运行使用系统框架和系统自带的 `curl`，不需要安装 Node.js、jq 或第三方运行库。当前版本已在本机 Apple Silicon Mac 上验证。
 
 ## 快速开始
+
+首次获取源码：
+
+```bash
+git clone git@github.com:tao355667/stable-link.git
+cd stable-link
+```
 
 保持 Clash Verge 正在运行，在项目根目录执行：
 
